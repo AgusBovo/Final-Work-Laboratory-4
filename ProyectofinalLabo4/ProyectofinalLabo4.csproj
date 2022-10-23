@@ -17,6 +17,8 @@
   <ItemGroup>
     <Folder Include="wwwroot\Imagenes\Clubs\" />
     <Folder Include="wwwroot\Imagenes\Jugadores\" />
+    <Folder Include="wwwroot\Importaciones\Clubes\" />
+    <Folder Include="wwwroot\Importaciones\Jugadores\" />
   </ItemGroup>
 
 </Project>

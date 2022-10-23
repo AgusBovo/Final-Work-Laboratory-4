@@ -27,6 +27,74 @@ namespace ProyectofinalLabo4.Controllers
         {
             return View(await _context.Clubes.ToListAsync());
         }
+        public async Task<IActionResult> Importar()
+        {
+            var archivos = HttpContext.Request.Form.Files;
+            if (archivos != null && archivos.Count > 0)
+            {
+                var archivo = archivos[0];
+
+                if (archivo.Length > 0)
+                {
+                    var pathDestino = Path.Combine(env.WebRootPath, "Importaciones\\Clubes");
+                    var archivoDestino = Guid.NewGuid().ToString();
+                    archivoDestino = archivoDestino.Replace("-", "");
+                    archivoDestino += Path.GetExtension(archivo.FileName);
+                    var rutaDestino = Path.Combine(pathDestino, archivoDestino);
+
+                    using (var filestream = new FileStream(rutaDestino, FileMode.Create))
+                    {
+                        archivo.CopyTo(filestream);
+
+
+                    };
+                    using (var file = new FileStream(rutaDestino, FileMode.Create))
+                    {
+                        List<string> renglones = new List<string>();
+                        List<Club> ClubArchivo = new List<Club>();
+
+                        StreamReader fileContent = new StreamReader(file, System.Text.Encoding.Default);
+                        do
+                        {
+                            renglones.Add(fileContent.ReadLine());
+                        }
+                        while (fileContent.EndOfStream);
+                        if(renglones.Count > 0)
+                        {
+                            foreach (var row in renglones)
+                            {
+
+                                string[] data = row.Split(";");
+                                if (data.Length > 0)
+                                {
+                                    Club club = new Club();
+                                    club.NombreClub = data[0].Trim();
+                                    club.Resumen = data[1].Trim();
+                                    club.Año = DateTime.Parse(data[2].Trim());
+                                    club.Pais = data[3].Trim();
+                                    club.Categoria = data[4].Trim();
+
+                                    ClubArchivo.Add(club);
+                                }
+
+                            }
+                            if (ClubArchivo.Count > 0)
+                            {
+                                _context.AddRange(ClubArchivo);
+                                await _context.SaveChangesAsync();
+                            }
+                        }
+                        
+                        
+                    }
+
+
+
+                }
+            }
+
+            return View("Index", await _context.Clubes.ToListAsync());
+        }
 
         // GET: Clubs/Details/5
         public async Task<IActionResult> Details(int? id)

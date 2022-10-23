@@ -25,7 +25,76 @@ namespace ProyectofinalLabo4.Controllers
         // GET: Jugadores
         public async Task<IActionResult> Index()
         {
+            
             return View(await _context.Jugadores.ToListAsync());
+        }
+
+        public async Task<IActionResult> Importar()
+        {
+            var archivos = HttpContext.Request.Form.Files;
+            if (archivos != null && archivos.Count > 0)
+            {
+                var archivo = archivos[0];
+
+                if (archivo.Length > 0)
+                {
+                    var pathDestino = Path.Combine(env.WebRootPath, "Importaciones\\Jugadores");
+                    var archivoDestino = Guid.NewGuid().ToString();
+                    archivoDestino = archivoDestino.Replace("-", "");
+                    archivoDestino += Path.GetExtension(archivo.FileName);
+                    var rutaDestino = Path.Combine(pathDestino, archivoDestino);
+
+                    using (var filestream = new FileStream(rutaDestino, FileMode.Create))
+                    {
+                        archivo.CopyTo(filestream);
+
+
+                    };
+                    using (var file = new FileStream(rutaDestino, FileMode.Create))
+                    {
+                        List<string> renglones = new List<string>();
+                        List<Jugador> JugadorArchivo = new List<Jugador>();
+
+                        StreamReader fileContent = new StreamReader(file, System.Text.Encoding.Default);
+                        do
+                        {
+                            renglones.Add(fileContent.ReadLine());
+                        }
+                        while (fileContent.EndOfStream);
+                        if(renglones.Count > 0)
+                        {
+                            foreach (var row in renglones)
+                            {
+
+                                string[] data = row.Split(";");
+                                if (data.Length == 3)
+                                {
+                                    Jugador jugador = new Jugador();
+                                    jugador.Nombre = data[0].Trim();
+                                    jugador.Apellido = data[1].Trim();
+                                    jugador.Biografia = data[2].Trim();
+
+                                    JugadorArchivo.Add(jugador);
+                                }
+
+                            }
+                            if (JugadorArchivo.Count > 0)
+                            {
+                                _context.AddRange(JugadorArchivo);
+                                await _context.SaveChangesAsync();
+                            }
+                        }
+                        
+                        
+                        
+                    }
+
+
+
+                }
+            }
+            
+            return View("Index", await _context.Jugadores.ToListAsync());
         }
 
         // GET: Jugadores/Details/5
