@@ -110,7 +110,7 @@ namespace ProyectofinalLabo4.Controllers
         // more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,NombreClub,Resumen,Año,Pais,Categoria")] Club club)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,NombreClub,Resumen,Año,Pais,Categoria,foto")] Club club)
         {
             if (id != club.Id)
             {
@@ -119,6 +119,30 @@ namespace ProyectofinalLabo4.Controllers
 
             if (ModelState.IsValid)
             {
+                var archivos = HttpContext.Request.Form.Files;
+                if (archivos != null && archivos.Count > 0)
+                {
+                    var archivoFoto = archivos[0];
+
+                    if (archivoFoto.Length > 0)
+                    {
+                        var pathDestino = Path.Combine(env.WebRootPath, "Imagenes\\Clubs");
+                        var archivoDestino = Guid.NewGuid().ToString();
+                        archivoDestino = archivoDestino.Replace("-", "");
+                        archivoDestino += Path.GetExtension(archivoFoto.FileName);
+                        var rutaDestino = Path.Combine(pathDestino, archivoDestino);
+
+                        string fotoAnterior = Path.Combine(pathDestino, club.foto);
+                        if (System.IO.File.Exists(fotoAnterior))
+                            System.IO.File.Delete(fotoAnterior);
+
+                        using (var filestream = new FileStream(rutaDestino, FileMode.Create))
+                        {
+                            archivoFoto.CopyTo(filestream);
+                            club.foto = archivoDestino;
+                        };
+                    }
+                }
                 try
                 {
                     _context.Update(club);
